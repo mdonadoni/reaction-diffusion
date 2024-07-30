@@ -10,6 +10,11 @@ use winit::{
     window::Window,
 };
 
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::WindowExtWebSys;
+
 pub mod config;
 mod diffusion;
 
@@ -232,5 +237,29 @@ pub async fn run(config: &Config) {
 
     let mut state = State::new(config, &window).await;
 
+    #[cfg(target_arch = "wasm32")]
+    {
+        web_sys::window()
+            .and_then(|win| win.document())
+            .and_then(|doc| doc.body())
+            .and_then(|body| {
+                let canvas = web_sys::Element::from(window.canvas()?);
+                body.append_child(&canvas).ok()?;
+                Some(())
+            })
+            .expect("error while mounting canvas");
+    }
+
     event_loop.run_app(&mut state).unwrap();
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
+pub async fn web_init() {
+    console_error_panic_hook::set_once();
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
+pub async fn web_run() {
+    let config: Config = Default::default();
+    run(&config).await
 }
