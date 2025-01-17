@@ -61,7 +61,7 @@ function initUI(updater) {
     // set initial value
     setValue(key, state[key]);
     inputs[key].addEventListener("input", (event) => {
-      setValue(key, event.target.value);
+      setValue(key, event.target.valueAsNumber);
     });
   }
 }
