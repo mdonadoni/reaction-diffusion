@@ -47,7 +47,11 @@ function setValue(key, value) {
 }
 
 // initialise UI
-function initUI(updater) {
+function initUI(updater, canvas) {
+  // mount canvas
+  document.getElementById("canvas-container").appendChild(canvas);
+
+  // set event listeners
   updateCallbacks = {
     diffusionA: updater.setDiffusionA.bind(updater),
     diffusionB: updater.setDiffusionB.bind(updater),
@@ -67,14 +71,15 @@ function initUI(updater) {
 }
 
 let updater = null;
+let canvas = null;
 
 init()
   .then(() => {
     // TODO: do not hardcode window size (after supporting resize)
     const config = Config.with_size(512, 512);
     const app = App.new(config);
-    app.mountCanvas();
+    canvas = app.canvas();
     updater = app.updater();
     return app.run();
   })
-  .then(() => initUI(updater));
+  .then(() => initUI(updater, canvas));

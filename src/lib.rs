@@ -274,18 +274,10 @@ impl App {
     }
 
     #[cfg(target_arch = "wasm32")]
-    #[wasm_bindgen(js_name = mountCanvas)]
-    pub fn mount_canvas(&self) {
-        // TODO: this can be improved
-        web_sys::window()
-            .and_then(|win| win.document())
-            .and_then(|doc| doc.body())
-            .and_then(|body| {
-                let canvas = web_sys::Element::from(self.window_handle.canvas()?);
-                body.append_child(&canvas).ok()?;
-                Some(())
-            })
-            .expect("error while mounting canvas");
+    pub fn canvas(&self) -> web_sys::HtmlCanvasElement {
+        self.window_handle
+            .canvas()
+            .expect("error while getting canvas")
     }
 
     pub fn updater(&self) -> AppUpdater {
