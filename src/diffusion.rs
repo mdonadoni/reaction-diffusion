@@ -22,6 +22,9 @@ pub(crate) struct Diffusion {
     bind_group_a: wgpu::BindGroup,
     bind_group_b: wgpu::BindGroup,
     step_number: u64,
+    uniform: ConfigUniform,
+    uniform_buffer: wgpu::Buffer,
+    uniform_has_changed: bool,
 }
 
 impl Diffusion {
@@ -238,6 +241,9 @@ impl Diffusion {
             bind_group_a,
             bind_group_b,
             step_number: 0,
+            uniform: config_uniform,
+            uniform_buffer: buffer_uniforms,
+            uniform_has_changed: false,
         }
     }
 
@@ -257,7 +263,16 @@ impl Diffusion {
         self.step_number
     }
 
-    pub(crate) fn render(&mut self, encoder: &mut wgpu::CommandEncoder) {
+    pub(crate) fn render(&mut self, queue: &mut wgpu::Queue, encoder: &mut wgpu::CommandEncoder) {
+        if self.uniform_has_changed {
+            self.uniform_has_changed = false;
+            queue.write_buffer(
+                &self.uniform_buffer,
+                0,
+                bytemuck::cast_slice(&[self.uniform]),
+            )
+        }
+        // prepare render pass
         {
             let mut compute_pass = encoder.begin_compute_pass(&Default::default());
             compute_pass.set_pipeline(&self.compute_pipeline);
@@ -266,5 +281,30 @@ impl Diffusion {
             compute_pass.dispatch_workgroups(self.size / 64, 1, 1);
         }
         self.step_number += 1;
+    }
+
+    pub(crate) fn set_kill(&mut self, kill: f32) {
+        self.uniform_has_changed = true;
+        self.uniform.kill = kill;
+    }
+
+    pub(crate) fn set_feed(&mut self, feed: f32) {
+        self.uniform_has_changed = true;
+        self.uniform.feed = feed;
+    }
+
+    pub(crate) fn set_diffusion_a(&mut self, diffusion_a: f32) {
+        self.uniform_has_changed = true;
+        self.uniform.diffusion_a = diffusion_a;
+    }
+
+    pub(crate) fn set_diffusion_b(&mut self, diffusion_b: f32) {
+        self.uniform_has_changed = true;
+        self.uniform.diffusion_b = diffusion_b;
+    }
+
+    pub(crate) fn set_timestep(&mut self, timestep: f32) {
+        self.uniform_has_changed = true;
+        self.uniform.timestep = timestep;
     }
 }

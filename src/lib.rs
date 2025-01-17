@@ -1,26 +1,29 @@
 use config::Config;
 use diffusion::Diffusion;
+use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
     event::{ElementState, KeyEvent, WindowEvent},
-    event_loop::EventLoop,
+    event_loop::{EventLoop, EventLoopProxy},
     keyboard::{KeyCode, PhysicalKey},
     window::Window,
 };
 
-#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use winit::platform::web::EventLoopExtWebSys;
 #[cfg(target_arch = "wasm32")]
 use winit::platform::web::WindowExtWebSys;
 
 pub mod config;
 mod diffusion;
+mod event;
 
-struct State<'a> {
-    window: &'a Window,
-    surface: wgpu::Surface<'a>,
+struct State {
+    window: Arc<Window>,
+    surface: wgpu::Surface<'static>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     vertex_buffer: wgpu::Buffer,
@@ -30,10 +33,10 @@ struct State<'a> {
     frame_number: u64,
 }
 
-impl<'a> State<'a> {
-    async fn new(config: &Config, window: &'a Window) -> State<'a> {
+impl State {
+    async fn new(config: &Config, window: Arc<Window>) -> State {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
-        let surface = instance.create_surface(window).unwrap();
+        let surface = instance.create_surface(window.clone()).unwrap();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 compatible_surface: Some(&surface),
@@ -162,7 +165,7 @@ impl<'a> State<'a> {
         }
 
         for _ in 0..self.steps_per_frame {
-            self.diffusion.render(&mut encoder);
+            self.diffusion.render(&mut self.queue, &mut encoder);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -178,7 +181,7 @@ impl<'a> State<'a> {
     }
 }
 
-impl<'a> ApplicationHandler<()> for State<'a> {
+impl ApplicationHandler<event::Event> for State {
     fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {}
 
     fn new_events(
@@ -224,42 +227,125 @@ impl<'a> ApplicationHandler<()> for State<'a> {
             _ => {}
         }
     }
+
+    fn user_event(
+        &mut self,
+        _event_loop: &winit::event_loop::ActiveEventLoop,
+        event: event::Event,
+    ) {
+        match event {
+            event::Event::SetKill(kill) => self.diffusion.set_kill(kill),
+            event::Event::SetFeed(feed) => self.diffusion.set_feed(feed),
+            event::Event::SetDiffusionA(diffusion_a) => self.diffusion.set_diffusion_a(diffusion_a),
+            event::Event::SetDiffusionB(diffusion_b) => self.diffusion.set_diffusion_b(diffusion_b),
+            event::Event::SetStepsPerFrame(steps_per_frame) => {
+                self.steps_per_frame = steps_per_frame
+            }
+            event::Event::SetTimestep(timestep) => self.diffusion.set_timestep(timestep),
+        }
+    }
 }
 
-pub async fn run(config: &Config) {
-    let event_loop = EventLoop::new().unwrap();
-    let window_attributes = Window::default_attributes()
-        .with_active(true)
-        .with_inner_size(PhysicalSize::new(config.width, config.height));
+#[wasm_bindgen]
+pub struct App {
+    event_loop: EventLoop<event::Event>,
+    window_handle: Arc<Window>,
+    config: Config,
+}
 
-    // TODO: fix deprecation, this should go inside `resumed`
-    let window = event_loop.create_window(window_attributes).unwrap();
+#[wasm_bindgen]
+impl App {
+    pub fn new(config: Config) -> Self {
+        let event_loop = EventLoop::<event::Event>::with_user_event()
+            .build()
+            .unwrap();
+        let window_attributes = Window::default_attributes()
+            .with_active(true)
+            .with_inner_size(PhysicalSize::new(config.width, config.height));
 
-    let mut state = State::new(config, &window).await;
+        // TODO: fix deprecation, this should go inside `resumed`
+        let window = event_loop.create_window(window_attributes).unwrap();
+
+        Self {
+            event_loop,
+            window_handle: Arc::new(window),
+            config,
+        }
+    }
 
     #[cfg(target_arch = "wasm32")]
-    {
+    #[wasm_bindgen(js_name = mountCanvas)]
+    pub fn mount_canvas(&self) {
+        // TODO: this can be improved
         web_sys::window()
             .and_then(|win| win.document())
             .and_then(|doc| doc.body())
             .and_then(|body| {
-                let canvas = web_sys::Element::from(window.canvas()?);
+                let canvas = web_sys::Element::from(self.window_handle.canvas()?);
                 body.append_child(&canvas).ok()?;
                 Some(())
             })
             .expect("error while mounting canvas");
     }
 
-    event_loop.run_app(&mut state).unwrap();
+    pub fn updater(&self) -> AppUpdater {
+        AppUpdater {
+            event_loop_proxy: self.event_loop.create_proxy(),
+        }
+    }
+
+    pub async fn run(self) {
+        let mut state = State::new(&self.config, self.window_handle.clone()).await;
+        #[cfg(target_arch = "wasm32")]
+        self.event_loop.spawn_app(state);
+        #[cfg(not(target_arch = "wasm32"))]
+        self.event_loop.run_app(&mut state).unwrap();
+    }
+}
+
+#[wasm_bindgen]
+pub struct AppUpdater {
+    event_loop_proxy: EventLoopProxy<event::Event>,
+}
+
+#[wasm_bindgen]
+impl AppUpdater {
+    fn send_event(&self, event: event::Event) {
+        self.event_loop_proxy.send_event(event).unwrap();
+    }
+
+    #[wasm_bindgen(js_name = setKill)]
+    pub fn set_kill(&self, kill: f32) {
+        self.send_event(event::Event::SetKill(kill));
+    }
+
+    #[wasm_bindgen(js_name = setFeed)]
+    pub fn set_feed(&self, feed: f32) {
+        self.send_event(event::Event::SetFeed(feed));
+    }
+
+    #[wasm_bindgen(js_name = setDiffusionA)]
+    pub fn set_diffusion_a(&self, diffusion_a: f32) {
+        self.send_event(event::Event::SetDiffusionA(diffusion_a));
+    }
+
+    #[wasm_bindgen(js_name = setDiffusionB)]
+    pub fn set_diffusion_b(&self, diffusion_b: f32) {
+        self.send_event(event::Event::SetDiffusionB(diffusion_b));
+    }
+
+    #[wasm_bindgen(js_name = setTimestep)]
+    pub fn set_timestep(&self, timestep: f32) {
+        self.send_event(event::Event::SetTimestep(timestep));
+    }
+
+    #[wasm_bindgen(js_name = setStepsPerFrame)]
+    pub fn set_steps_per_frame(&self, steps_per_frame: u32) {
+        self.send_event(event::Event::SetStepsPerFrame(steps_per_frame));
+    }
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(start))]
 pub async fn web_init() {
     console_error_panic_hook::set_once();
-}
-
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
-pub async fn web_run() {
-    let config: Config = Default::default();
-    run(&config).await
 }

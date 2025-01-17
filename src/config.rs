@@ -1,5 +1,7 @@
 use clap::Parser;
+use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen]
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
 pub struct Config {
@@ -36,6 +38,7 @@ impl Default for Config {
     }
 }
 
+#[wasm_bindgen]
 impl Config {
     pub fn with_size(width: u32, height: u32) -> Self {
         Self {
