@@ -21,10 +21,17 @@ pub(crate) struct Diffusion {
     bind_group_layout: wgpu::BindGroupLayout,
     bind_group_a: wgpu::BindGroup,
     bind_group_b: wgpu::BindGroup,
+
+    buffer_a0: wgpu::Buffer,
+    buffer_a1: wgpu::Buffer,
+    buffer_b0: wgpu::Buffer,
+    buffer_b1: wgpu::Buffer,
+
     step_number: u64,
     uniform: ConfigUniform,
     uniform_buffer: wgpu::Buffer,
     uniform_has_changed: bool,
+    to_be_reset: bool,
 }
 
 impl Diffusion {
@@ -80,22 +87,22 @@ impl Diffusion {
         let buffer_a0 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Buffer A0"),
             contents: bytemuck::cast_slice(&a_init_values),
-            usage: BufferUsages::STORAGE,
+            usage: BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
         let buffer_a1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Buffer A1"),
             contents: bytemuck::cast_slice(&a_init_values),
-            usage: BufferUsages::STORAGE,
+            usage: BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
         let buffer_b0 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Buffer B0"),
             contents: bytemuck::cast_slice(&b_init_values),
-            usage: BufferUsages::STORAGE,
+            usage: BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
         let buffer_b1 = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Buffer B1"),
             contents: bytemuck::cast_slice(&b_init_values),
-            usage: BufferUsages::STORAGE,
+            usage: BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -244,6 +251,11 @@ impl Diffusion {
             uniform: config_uniform,
             uniform_buffer: buffer_uniforms,
             uniform_has_changed: false,
+            buffer_a0,
+            buffer_a1,
+            buffer_b0,
+            buffer_b1,
+            to_be_reset: false,
         }
     }
 
@@ -272,6 +284,17 @@ impl Diffusion {
                 bytemuck::cast_slice(&[self.uniform]),
             )
         }
+
+        if self.to_be_reset {
+            self.to_be_reset = false;
+            let (a_init_values, b_init_values) =
+                Self::init_values(self.uniform.width, self.uniform.height);
+            queue.write_buffer(&self.buffer_a0, 0, bytemuck::cast_slice(&a_init_values));
+            queue.write_buffer(&self.buffer_a1, 0, bytemuck::cast_slice(&a_init_values));
+            queue.write_buffer(&self.buffer_b0, 0, bytemuck::cast_slice(&b_init_values));
+            queue.write_buffer(&self.buffer_b1, 0, bytemuck::cast_slice(&b_init_values));
+        }
+
         // prepare render pass
         {
             let mut compute_pass = encoder.begin_compute_pass(&Default::default());
@@ -306,5 +329,9 @@ impl Diffusion {
     pub(crate) fn set_timestep(&mut self, timestep: f32) {
         self.uniform_has_changed = true;
         self.uniform.timestep = timestep;
+    }
+
+    pub(crate) fn reset(&mut self) {
+        self.to_be_reset = true;
     }
 }

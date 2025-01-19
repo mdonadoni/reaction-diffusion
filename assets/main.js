@@ -68,6 +68,9 @@ function initUI(updater, canvas) {
       setValue(key, event.target.valueAsNumber);
     });
   }
+
+  const resetButton = document.getElementById("reset");
+  resetButton.addEventListener("click", updater.reset.bind(updater));
 }
 
 let updater = null;

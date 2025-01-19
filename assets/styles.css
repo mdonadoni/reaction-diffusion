@@ -3,3 +3,8 @@
   grid-template-columns: 120px 200px 100px;
   column-gap: 1em;
 }
+
+.main-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}

@@ -242,6 +242,7 @@ impl ApplicationHandler<event::Event> for State {
                 self.steps_per_frame = steps_per_frame
             }
             event::Event::SetTimestep(timestep) => self.diffusion.set_timestep(timestep),
+            event::Event::Reset => self.diffusion.reset(),
         }
     }
 }
@@ -334,6 +335,10 @@ impl AppUpdater {
     #[wasm_bindgen(js_name = setStepsPerFrame)]
     pub fn set_steps_per_frame(&self, steps_per_frame: u32) {
         self.send_event(event::Event::SetStepsPerFrame(steps_per_frame));
+    }
+
+    pub fn reset(&self) {
+        self.send_event(event::Event::Reset);
     }
 }
 
