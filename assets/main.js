@@ -19,8 +19,8 @@ const outputs = {
 };
 
 const state = {
-  diffusionA: 1.0,
-  diffusionB: 0.5,
+  diffusionA: 0.5,
+  diffusionB: 0.25,
   feed: 0.03,
   kill: 0.09,
   stepsPerFrame: 20,
@@ -41,9 +41,10 @@ const configKeys = [
 function setValue(key, value) {
   console.log(`Setting value ${key} to ${value}`);
   state[key] = value;
-  updateCallbacks[key](value);
-  outputs[key].innerHTML = value.toString();
   inputs[key].value = value;
+  updateCallbacks[key](value);
+  // show rounded value in UI
+  outputs[key].innerHTML = parseFloat(value.toFixed(4)).toString();
 }
 
 // initialise UI

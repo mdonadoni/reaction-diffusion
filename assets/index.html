@@ -5,35 +5,75 @@
     <script type="module" src="main.js" defer></script>
   </head>
   <body>
-    <div class="main-container">
-      <div class="settings">
-        <label for="kill">Kill rate</label>
-        <input id="kill" type="range" min="0.01" max="0.1" step="any" />
-        <span id="kill-value"></span>
+    <div class="page">
+      <header>
+        <h1>Reaction Diffusion</h1>
+      </header>
+      <div class="main-content">
+        <div class="lhs-column">
+          <h2>Settings</h2>
+          <div class="settings">
+            <div class="settings-slider">
+              <label for="kill">Kill rate</label>
+              <input id="kill" type="range" min="0.01" max="0.1" step="any" />
+              <span id="kill-value"></span>
+            </div>
 
-        <label for="feed">Feed rate</label>
-        <input id="feed" type="range" min="0.01" max="0.1" step="any" />
-        <span id="feed-value"></span>
+            <div class="settings-slider">
+              <label for="feed">Feed rate</label>
+              <input id="feed" type="range" min="0.01" max="0.1" step="any" />
+              <span id="feed-value"></span>
+            </div>
 
-        <label for="diffusion-a">Diffusion A</label>
-        <input id="diffusion-a" type="range" min="0" max="1" step="any" />
-        <span id="diffusion-a-value"></span>
+            <div class="settings-slider">
+              <label for="diffusion-a">Diffusion A</label>
+              <input
+                id="diffusion-a"
+                type="range"
+                min="0"
+                max="0.5"
+                step="any"
+              />
+              <span id="diffusion-a-value"></span>
+            </div>
 
-        <label for="diffusion-b">Diffusion B</label>
-        <input id="diffusion-b" type="range" min="0" max="1" step="any" />
-        <span id="diffusion-b-value"></span>
+            <div class="settings-slider">
+              <label for="diffusion-b">Diffusion B</label>
+              <input
+                id="diffusion-b"
+                type="range"
+                min="0"
+                max="0.5"
+                step="any"
+              />
+              <span id="diffusion-b-value"></span>
+            </div>
 
-        <label for="timestep">Timestep</label>
-        <input id="timestep" type="range" min="0" max="1" step="any" />
-        <span id="timestep-value"></span>
+            <div class="settings-slider">
+              <label for="timestep">Timestep</label>
+              <input id="timestep" type="range" min="0" max="1" step="any" />
+              <span id="timestep-value"></span>
+            </div>
 
-        <label for="steps-per-frame">Steps per frame</label>
-        <input id="steps-per-frame" type="range" min="0" max="500" step="1" />
-        <span id="steps-per-frame-value"></span>
+            <div class="settings-slider">
+              <label for="steps-per-frame">Steps per frame</label>
+              <input
+                id="steps-per-frame"
+                type="range"
+                min="0"
+                max="500"
+                step="1"
+              />
+              <span id="steps-per-frame-value"></span>
+            </div>
+          </div>
 
-        <button id="reset">Reset</button>
+          <div class="actions">
+            <button id="reset">Reset</button>
+          </div>
+        </div>
+        <div id="canvas-container"></div>
       </div>
-      <div id="canvas-container"></div>
     </div>
   </body>
 </html>

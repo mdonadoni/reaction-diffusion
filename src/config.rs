@@ -13,9 +13,9 @@ pub struct Config {
     pub steps_per_frame: u32,
     #[arg(long, default_value_t = 1.0)]
     pub timestep: f32,
-    #[arg(long, default_value_t = 1.0)]
-    pub diffusion_a: f32,
     #[arg(long, default_value_t = 0.5)]
+    pub diffusion_a: f32,
+    #[arg(long, default_value_t = 0.25)]
     pub diffusion_b: f32,
     #[arg(long, default_value_t = 0.03)]
     pub feed: f32,
