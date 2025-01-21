@@ -185,16 +185,8 @@ impl State {
 }
 
 impl ApplicationHandler<event::Event> for State {
-    fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {}
-
-    fn new_events(
-        &mut self,
-        _event_loop: &winit::event_loop::ActiveEventLoop,
-        cause: winit::event::StartCause,
-    ) {
-        if cause == winit::event::StartCause::Poll {
-            self.window.request_redraw();
-        }
+    fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
+        // TODO: window should be created here
     }
 
     fn window_event(
@@ -220,7 +212,7 @@ impl ApplicationHandler<event::Event> for State {
             } => event_loop.exit(),
             WindowEvent::RedrawRequested => {
                 match self.render() {
-                    Ok(_) => event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll),
+                    Ok(_) => (),
                     // TODO: should resize (?) instead of exiting
                     Err(wgpu::SurfaceError::Lost) => event_loop.exit(),
                     Err(wgpu::SurfaceError::OutOfMemory) => event_loop.exit(),
@@ -247,6 +239,11 @@ impl ApplicationHandler<event::Event> for State {
             event::Event::SetTimestep(timestep) => self.diffusion.set_timestep(timestep),
             event::Event::Reset => self.diffusion.reset(),
         }
+    }
+
+    fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
+        // request next frame to advance the simulation
+        self.window.request_redraw();
     }
 }
 
