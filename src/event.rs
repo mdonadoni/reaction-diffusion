@@ -7,4 +7,6 @@ pub enum Event {
     SetStepsPerFrame(u32),
     SetTimestep(f32),
     Reset,
+    Start,
+    Pause,
 }

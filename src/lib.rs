@@ -21,6 +21,19 @@ pub mod config;
 mod diffusion;
 mod event;
 
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn log(s: &str) {
+    eprintln!("{}", s);
+}
+
 struct State {
     window: Arc<Window>,
     surface: wgpu::Surface<'static>,
@@ -31,6 +44,7 @@ struct State {
     diffusion: Diffusion,
     steps_per_frame: u32,
     frame_number: u64,
+    paused: bool,
 }
 
 impl State {
@@ -132,6 +146,7 @@ impl State {
             diffusion,
             steps_per_frame: config.steps_per_frame,
             frame_number: 0,
+            paused: false,
         }
     }
 
@@ -175,11 +190,6 @@ impl State {
         frame.present();
 
         self.frame_number += 1;
-        println!(
-            "Frame: {} Reaction-diffusion step: {}",
-            self.frame_number,
-            self.diffusion.step_number()
-        );
         Ok(())
     }
 }
@@ -237,13 +247,21 @@ impl ApplicationHandler<event::Event> for State {
                 self.steps_per_frame = steps_per_frame
             }
             event::Event::SetTimestep(timestep) => self.diffusion.set_timestep(timestep),
-            event::Event::Reset => self.diffusion.reset(),
+            event::Event::Reset => {
+                self.diffusion.reset();
+                // request redraw so that surface updates even when the simulation is paused
+                self.window.request_redraw();
+            }
+            event::Event::Start => self.paused = false,
+            event::Event::Pause => self.paused = true,
         }
     }
 
     fn about_to_wait(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         // request next frame to advance the simulation
-        self.window.request_redraw();
+        if !self.paused {
+            self.window.request_redraw();
+        }
     }
 }
 
@@ -339,6 +357,14 @@ impl AppUpdater {
 
     pub fn reset(&self) {
         self.send_event(event::Event::Reset);
+    }
+
+    pub fn start(&self) {
+        self.send_event(event::Event::Start);
+    }
+
+    pub fn pause(&self) {
+        self.send_event(event::Event::Pause);
     }
 }
 

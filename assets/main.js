@@ -72,6 +72,10 @@ function initUI(updater, canvas) {
 
   const resetButton = document.getElementById("reset");
   resetButton.addEventListener("click", updater.reset.bind(updater));
+  const startButton = document.getElementById("start");
+  startButton.addEventListener("click", updater.start.bind(updater));
+  const pauseButton = document.getElementById("pause");
+  pauseButton.addEventListener("click", updater.pause.bind(updater));
 }
 
 let updater = null;

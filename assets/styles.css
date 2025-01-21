@@ -17,6 +17,7 @@ body {
   margin: 0 auto;
   height: 100vh;
   max-width: 1200px;
+  padding: 0 1em;
 }
 
 header {
@@ -54,6 +55,8 @@ h2 {
   margin: 2em 0;
   height: 3em;
   display: flex;
+  gap: 1em;
+  justify-content: center;
 }
 
 .actions > * {
