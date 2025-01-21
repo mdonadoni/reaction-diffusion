@@ -35,7 +35,7 @@ struct State {
 
 impl State {
     async fn new(config: &Config, window: Arc<Window>) -> State {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let surface = instance.create_surface(window.clone()).unwrap();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -100,13 +100,15 @@ impl State {
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: "vs_main",
+                entry_point: None,
                 buffers: &[vertex_buffer_layout],
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: "fs_main",
+                entry_point: None,
                 targets: &[Some(surface.get_capabilities(&adapter).formats[0].into())],
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 cull_mode: Some(wgpu::Face::Back),
@@ -115,6 +117,7 @@ impl State {
             depth_stencil: None,
             multisample: Default::default(),
             multiview: None,
+            cache: None,
         });
         // TODO: this should go in resize
         surface.configure(&device, &surface_config);

@@ -182,7 +182,9 @@ impl Diffusion {
             label: Some("Diffusion ComputePipeline"),
             layout: Some(&compute_pipeline_layout),
             module: &shader,
-            entry_point: "diffusion_step",
+            entry_point: None,
+            compilation_options: Default::default(),
+            cache: None,
         });
 
         // Buffer A0 and B0 are inputs, A1 and B1 are outputs
