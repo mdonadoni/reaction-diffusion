@@ -27,6 +27,10 @@ fn diffusion_step(@builtin(global_invocation_id) global_invocation_id: vec3<u32>
 
     let i = global_invocation_id.x;
 
+    if i > config.size {
+        return;
+    }
+
     let conv_A = -A[i] + // current cell
         (A[i - 1] + A[i + 1] + A[i - width] + A[i + width]) * 0.2 + // neighbours
         (A[i - width - 1] + A[i - width + 1] + A[i + width - 1] + A[i + width + 1]) * 0.05; //corners

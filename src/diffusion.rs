@@ -302,8 +302,7 @@ impl Diffusion {
             let mut compute_pass = encoder.begin_compute_pass(&Default::default());
             compute_pass.set_pipeline(&self.compute_pipeline);
             compute_pass.set_bind_group(0, self.current_bind_group(), &[]);
-            // TODO: height and width might not be evenly divisible by workgroup size
-            compute_pass.dispatch_workgroups(self.size / 64, 1, 1);
+            compute_pass.dispatch_workgroups(self.size.div_ceil(64), 1, 1);
         }
         self.step_number += 1;
     }
