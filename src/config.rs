@@ -30,8 +30,8 @@ impl Default for Config {
             height: 512,
             steps_per_frame: 20,
             timestep: 1.0,
-            diffusion_a: 1.0,
-            diffusion_b: 0.5,
+            diffusion_a: 0.5,
+            diffusion_b: 0.25,
             feed: 0.03,
             kill: 0.09,
         }

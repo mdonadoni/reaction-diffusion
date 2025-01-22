@@ -1,6 +1,5 @@
 use clap::Parser;
-use reaction_diffusion::config::Config;
-use reaction_diffusion::App;
+use reaction_diffusion::{App, Config};
 
 fn main() {
     env_logger::init();
