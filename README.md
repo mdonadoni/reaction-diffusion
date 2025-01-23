@@ -13,8 +13,10 @@ Reaction-diffusion systems model the concentration in space and time of chemical
 The Gray Scott model is a specific reaction-diffusion system that simulates the behaviour of the following chemical reactions:
 
 ```math
+\begin{gather*}
 A + 2B \rightarrow 3B \\
 B \rightarrow C
+\end{gather*}
 ```
 
 The concentration of reagents $A$ and $B$ is known at every point in space, and is represented by the functions $a$ and $b$. The substance $C$ is an inert product that no longer reacts.
@@ -22,8 +24,10 @@ The concentration of reagents $A$ and $B$ is known at every point in space, and 
 The system is described by the following equations:
 
 ```math
+\begin{gather*}
 \frac{ \partial a }{ \partial t } = D_a \nabla^2 a - a b^2 + f (1 - a) \\
 \frac{ \partial b }{ \partial t } = D_b \nabla^2 b + a b^2 - (k + f) b
+\end{gather*}
 ```
 
 where:
