@@ -78,16 +78,35 @@ function initUI(updater, canvas) {
   pauseButton.addEventListener("click", updater.pause.bind(updater));
 }
 
-let updater = null;
-let canvas = null;
+function isWebGPUAvailable() {
+  if (!navigator.gpu) {
+    return Promise.resolve(false);
+  }
+
+  return navigator.gpu
+    .requestAdapter()
+    .then((adapter) => !!adapter)
+    .catch(() => false);
+}
+
+function showWebGPUError() {
+  console.log("No WebGPU support!");
+  const error = document.getElementById("webgpu-error");
+  error.style.display = "block";
+}
 
 init()
-  .then(() => {
+  .then(isWebGPUAvailable)
+  .then((webGPUAvailable) => {
+    if (!webGPUAvailable) {
+      showWebGPUError();
+      return;
+    }
+
     // TODO: do not hardcode window size (after supporting resize)
     const config = Config.with_size(512, 512);
     const app = App.new(config);
-    canvas = app.canvas();
-    updater = app.updater();
-    return app.run();
-  })
-  .then(() => initUI(updater, canvas));
+    const canvas = app.canvas();
+    const updater = app.updater();
+    return app.run().then(() => initUI(updater, canvas));
+  });

@@ -67,3 +67,17 @@ canvas {
   display: block;
   margin: auto;
 }
+
+.error {
+  border-radius: 5px;
+  background-color: #ffdddd;
+  border: 1px #cc2222 solid;
+  color: #cc2222;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+.error-header {
+  font-weight: bold;
+  font-size: large;
+}
